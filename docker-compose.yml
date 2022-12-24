@@ -1,0 +1,88 @@
+version: '3'
+
+services:
+  radarr:
+    # For Movies
+    image: linuxserver/radarr
+    ports:
+      - 7878:7878
+    volumes:
+      - /data/docker/VOLUMES/appdata/Radarr:/config
+      - /data/docker/VOLUMES/media/downloads:/downloads
+      - /data/docker/VOLUMES/media/Movies:/movies
+    environment:
+      - PUID=1000
+      - PGID=1000
+    restart: always
+  sonarr:
+     # For TV
+     image: linuxserver/sonarr
+     ports:
+       - 8989:8989
+     volumes:
+       - /data/docker/VOLUMES/appdata/Sonarr:/config
+       - /data/docker/VOLUMES/media/downloads:/downloads
+       - /data/docker/VOLUMES/media/TV:/tv
+     environment:
+       - PUID=1000
+       - PGID=1000
+     restart: always
+  rutorrent:
+     # For downloading torrents
+     image: linuxserver/rutorrent
+     ports:
+      - 8080:80
+      - 5000:5000
+      - 51413:51413
+      - 6881:6881/udp
+     volumes:
+       - /data/docker/VOLUMES/appdata/rutorrent:/config
+       - /data/docker/VOLUMES/media/downloads:/downloads
+     environment:
+       - PUID=1000
+       - PGID=1000
+     restart: always
+  jackett:
+     # For aggregating searches and downloads
+     image: linuxserver/jackett
+     volumes:
+       - /data/docker/VOLUMES/appdata/Jackett:/config
+     environment:
+       - PUID=1000
+       - PGID=1000
+     ports:
+       - 9117:9117
+     restart: always
+  jellyfin:
+     # For media management and playback
+     image: jellyfin/jellyfin
+     user: 1000:1000
+     # Network mode = host is there so chromecast / mDNS works. Otherwise, casting won't work. This means the ports option is useless.
+     network_mode: "host"
+     # Disabled "ports" because network_mode is set to "hosts". If casting is not something you need to do, then you could change this
+     # #ports:
+     #  - 80:8096
+     volumes:
+       - /data/docker/VOLUMES/appdata/Jellyfin:/config
+       - /data/docker/VOLUMES/appdata/Jellyfin/cache:/cache
+       - /data/docker/VOLUMES/media:/media
+     environment:
+       - PUID=1000
+       - PGID=1000
+     restart: always
+  flaresolverr:
+    # For solving some private trackers' use of cloudlfare protection
+    # DockerHub mirror flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+      - TZ=America/Vancouver
+      - PUID=1000
+      - PGID=1000
+    ports:
+      - "${PORT:-8191}:8191"
+
+    restart: always
